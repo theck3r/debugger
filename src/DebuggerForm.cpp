@@ -8,6 +8,7 @@
 #include "FlagsViewer.h"
 #include "StackViewer.h"
 #include "SlotViewer.h"
+#include "VariablesViewer.h"
 #include "CommClient.h"
 #include "ConnectDialog.h"
 #include "SymbolManager.h"
@@ -276,6 +277,10 @@ void DebuggerForm::createActions()
 	viewMemoryAction->setStatusTip(tr("Toggle the main memory display"));
 	viewMemoryAction->setCheckable(true);
 
+	viewVariablesAction = new QAction(tr("Variables"), this);
+	viewVariablesAction->setStatusTip(tr("Toggle the variables display"));
+	viewVariablesAction->setCheckable(true);
+
 	viewDebuggableViewerAction = new QAction(tr("Add debuggable viewer"), this);
 	viewDebuggableViewerAction->setStatusTip(tr("Add a hex viewer for debuggables"));
 
@@ -365,6 +370,7 @@ void DebuggerForm::createActions()
 	connect(viewStackAction, SIGNAL(triggered()), this, SLOT(toggleStackDisplay()));
 	connect(viewSlotsAction, SIGNAL(triggered()), this, SLOT(toggleSlotsDisplay()));
 	connect(viewMemoryAction, SIGNAL(triggered()), this, SLOT(toggleMemoryDisplay()));
+	connect(viewVariablesAction, SIGNAL(triggered()), this, SLOT(toggleVariablesDisplay()));
 	connect(viewDebuggableViewerAction, SIGNAL(triggered()), this, SLOT(addDebuggableViewer()));
 	connect(viewBitMappedAction, SIGNAL(triggered()), this, SLOT(toggleBitMappedDisplay()));
 	connect(viewVDPRegsAction, SIGNAL(triggered()), this, SLOT(toggleVDPRegsDisplay()));
@@ -422,6 +428,7 @@ void DebuggerForm::createMenus()
 	viewMenu->addAction(viewStackAction);
 	viewMenu->addAction(viewSlotsAction);
 	viewMenu->addAction(viewMemoryAction);
+	viewMenu->addAction(viewVariablesAction);
 	viewVDPDialogsMenu = viewMenu->addMenu("VDP");
 	viewMenu->addSeparator();
 	viewFloatingWidgetsMenu = viewMenu->addMenu("Floating widgets:");
@@ -587,6 +594,19 @@ void DebuggerForm::createForm()
 	connect(dw, SIGNAL(visibilityChanged(DockableWidget*)),
 	        this, SLOT(dockWidgetVisibilityChanged(DockableWidget*)));
 
+	// create variables viewer
+	variablesView = new VariablesViewer();
+	dw = new DockableWidget(dockMan);
+	dw->setWidget(variablesView);
+	dw->setTitle(tr("Variables"));
+	dw->setId("VARIABLES");
+	dw->setFloating(false);
+	dw->setDestroyable(false);
+	dw->setMovable(true);
+	dw->setClosable(true);
+	connect(dw, SIGNAL(visibilityChanged(DockableWidget*)),
+	        this, SLOT(dockWidgetVisibilityChanged(DockableWidget*)));
+
 	// restore layout
 	restoreGeometry(Settings::get().value("Layout/WindowGeometry", saveGeometry()).toByteArray());
 
@@ -603,11 +623,16 @@ void DebuggerForm::createForm()
 		int codeH = dockMan.findDockableWidget("CODEVIEW")->sizeHint().height();
 		int flagW = dockMan.findDockableWidget("FLAGS")->sizeHint().width();
 		int slotW = dockMan.findDockableWidget("SLOTS")->sizeHint().width();
+//		int varW = dockMan.findDockableWidget("VARIABLES")->sizeHint().width();
 		list.append(QString("SLOTS D V R 0 -1 %1").arg(regH));
 		list.append(QString("STACK D V R 0 -1 %1").arg(codeH));
 		list.append(QString("MEMORY D V B %1 %2 %3").arg(codeW)
 		                                             .arg(regW + flagW + slotW)
 		                                             .arg(codeH - regH));
+		list.append(QString("VARIABLES D V B %1 %2 %3").arg(codeW)
+												.arg(regW + flagW + slotW)
+												.arg(codeH - regH));
+//		list.append(QString("VARIABLE D V B 0 -1 -1"));
 	}
 
 	// add widgets
@@ -668,6 +693,8 @@ void DebuggerForm::createForm()
 	disasmView->setBreakpoints(&session.breakpoints());
 	disasmView->setMemoryLayout(&memLayout);
 	disasmView->setSymbolTable(&session.symbolTable());
+	variablesView->setSymbolTable(&session.symbolTable());
+	variablesView->setMemoryLayout(&memLayout);
 	mainMemoryView->setDebuggable("memory", 65536);
 	stackView->setData(mainMemory, 65536);
 	slotView->setMemoryLayout(&memLayout);
@@ -933,6 +960,9 @@ void DebuggerForm::updateData()
 
 	// refresh slot viewer
 	slotView->refresh();
+
+	// updated variables view
+	variablesView->updateTable();
 
 	emit emulationChanged();
 }
@@ -1310,6 +1340,11 @@ void DebuggerForm::toggleMemoryDisplay()
 	toggleView(qobject_cast<DockableWidget*>(mainMemoryView->parentWidget()));
 }
 
+void DebuggerForm::toggleVariablesDisplay()
+{
+	toggleView(qobject_cast<DockableWidget*>(variablesView->parentWidget()));
+}
+
 void DebuggerForm::toggleView(DockableWidget* widget)
 {
 	if (widget->isHidden()) {
@@ -1365,6 +1400,7 @@ void DebuggerForm::updateViewMenu()
 	viewStackAction->setChecked(stackView->isVisible());
 	viewSlotsAction->setChecked(slotView->isVisible());
 	viewMemoryAction->setChecked(mainMemoryView->isVisible());
+	viewVariablesAction->setChecked(variablesView->isVisible());
 }
 
 void DebuggerForm::updateVDPViewMenu()
@@ -1440,6 +1476,8 @@ void DebuggerForm::symbolFileChanged()
 	shown = false;
 	if (choice == QMessageBox::Yes)
 		session.symbolTable().reloadFiles();
+
+	variablesView->updateTable();
 }
 
 void DebuggerForm::addressSlot(int addr, int& ps, int& ss, int& segment)
