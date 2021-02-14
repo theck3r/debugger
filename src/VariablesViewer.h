@@ -22,9 +22,14 @@ public:
 
 	void setSymbolTable(SymbolTable* st);
 	void setMemoryLayout(MemoryLayout* ml);
+
+	void initTable();
 	void updateTable();
 	void updateVariableValue(int variable_id, QString value);
 	void updateVariableValue16(int variable_id, QString value);
+
+public slots:
+	void symbolsChanged();
 
 private:
 	void resizeEvent(QResizeEvent* e) override;
