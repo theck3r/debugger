@@ -10,6 +10,13 @@
 #include <QString>
 #include <QVBoxLayout>
 
+/*
+TODO: Fix variables table not showing on reload (requires opening symbol
+	manager)
+TODO: Add selection options for showing jump labels/variables and hex/dec values
+TODO: Check why symbols vanish in manager, when selecting type option "value"
+*/
+
 class DebugAddress8Call : public SimpleCommand
 {
 public:
@@ -96,15 +103,23 @@ void VariablesViewer::initTable()
 	variablesTable->setRowCount(0);	// clear table first
 	QStringList variables;
 	Symbol* symbol;
+	QString symbolType;
 	variables = symTable->labelList(true, memLayout);
 	variablesTable->setRowCount(variables.size());
 	for (int i = 0; i < variables.size(); i += 1) {
 		symbol = symTable->getAddressSymbol(variables[i], true);
 		QTableWidgetItem* variable = new QTableWidgetItem(variables[i], 0);
 		variablesTable->setItem(i, 0, variable);
-		QTableWidgetItem* symbol_type = new QTableWidgetItem(
-				QString("%1").arg(symbol->type(), 0));
-		variablesTable->setItem(i, 1, symbol_type);
+		switch(symbol->type()){
+			case 0: symbolType = QString("Jump label");
+					break;
+			case 1: symbolType = QString("Variable label");
+					break;
+			default:
+					symbolType = QString("Unknown");
+		}
+		QTableWidgetItem* symbolTypeItem = new QTableWidgetItem(symbolType, 0);
+		variablesTable->setItem(i, 1, symbolTypeItem);
 		QTableWidgetItem* address = new QTableWidgetItem(
 				QString("$%1").arg(symbol->value(), 4, 16, QChar(48)));
 		variablesTable->setItem(i, 2, address);
