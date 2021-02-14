@@ -1,11 +1,3 @@
-/*
- * VariableViewer.cpp
- *
- *  Created on: Feb 13, 2021
- *      Author: thies
- */
-
-
 #include "VariablesViewer.h"
 #include "SymbolTable.h"
 #include "CommClient.h"
@@ -21,65 +13,67 @@
 class DebugAddress8Call : public SimpleCommand
 {
 public:
-	DebugAddress8Call(VariablesViewer& viewer_, int address_, int variable_id_)
+	DebugAddress8Call(VariablesViewer& viewer_, int address_, int variableId_)
 		: SimpleCommand(QString("peek %1").arg(address_))
 		, viewer(viewer_)
 		, address(address_)
-		, variable_id(variable_id_)
+		, variableId(variableId_)
 	{
 	}
 
 	void replyOk(const QString& message) override
 	{
-		viewer.updateVariableValue8(variable_id, message);
+		viewer.updateVariableValue8(variableId, message);
 		delete this;
 	}
 private:
 	VariablesViewer& viewer;
 	int address;
-	int variable_id;
+	int variableId;
 };
 
 // call the debugger to return 16bit value at address
 class DebugAddress16Call : public SimpleCommand
 {
 public:
-	DebugAddress16Call(VariablesViewer& viewer_, int address_, int variable_id_)
+	DebugAddress16Call(VariablesViewer& viewer_, int address_, int variableId_)
 		: SimpleCommand(QString("peek16 %1").arg(address_))
 		, viewer(viewer_)
 		, address(address_)
-		, variable_id(variable_id_)
+		, variableId(variableId_)
 	{
 	}
 
 	void replyOk(const QString& message) override
 	{
-		viewer.updateVariableValue16(variable_id, message);
+		viewer.updateVariableValue16(variableId, message);
 		delete this;
 	}
 private:
 	VariablesViewer& viewer;
 	int address;
-	int variable_id;
+	int variableId;
 };
 
 VariablesViewer::VariablesViewer(QWidget* parent)
 	: QTableWidget(parent)
 {
+	symTable = nullptr;
+	memLayout = nullptr;
+
 	variablesTable = new QTableWidget();
 	variablesTable->setColumnCount(5);
 	variablesTable->setRowCount(0);
 	variablesTable->setAlternatingRowColors(true);
 	variablesTable->setSortingEnabled(true);
 
-	// QStringList header_items;
-	QStringList header_items = QStringList();
-	header_items.append(QString("Label"));
-	header_items.append(QString("Type"));
-	header_items.append(QString("Address (hex)"));
-	header_items.append(QString("Value (8bit)"));
-	header_items.append(QString("Value (16bit)"));
-	variablesTable->setHorizontalHeaderLabels(header_items);
+	QStringList headerItems = QStringList();
+	headerItems.append(QString("Label"));
+	headerItems.append(QString("Type"));
+	headerItems.append(QString("Address"));
+	headerItems.append(QString("Value (8bit)"));
+	headerItems.append(QString("Value (16bit)"));
+	variablesTable->setHorizontalHeaderLabels(headerItems);
 
 	auto* vbox = new QVBoxLayout();
 	vbox->setMargin(0);
@@ -128,12 +122,12 @@ void VariablesViewer::symbolsChanged()
 
 void VariablesViewer::updateTable()
 {
-	QString address_text;
+	QString addressText;
 	int address;
 	bool ok;
 	for (int i = 0; i < variablesTable->rowCount(); i += 1) {
-		address_text = variablesTable->item(i, 2)->text();
-		address = address_text.right(4).toInt(&ok, 16);
+		addressText = variablesTable->item(i, 2)->text();
+		address = addressText.right(4).toInt(&ok, 16);
 		CommClient::instance().sendCommand(new DebugAddress8Call(*this,
 				address, i));
 		CommClient::instance().sendCommand(new DebugAddress16Call(*this,
@@ -141,32 +135,32 @@ void VariablesViewer::updateTable()
 	}
 }
 
-void VariablesViewer::updateVariableValue(int variable_id, QString value,
+void VariablesViewer::updateVariableValue(int variableId, QString value,
 		int column)
 {
-	QString old_value;
-	QTableWidgetItem* old_item;
-	QBrush text_color = Qt::black;
-	old_item = variablesTable->item(variable_id, column);
-	if (old_item != nullptr){
-		old_value = old_item->text();
-		if ( value != old_value){
-			text_color = Qt::red;
+	QString oldValue;
+	QTableWidgetItem* oldItem;
+	QBrush textColor = Qt::black;
+	oldItem = variablesTable->item(variableId, column);
+	if (oldItem != nullptr){
+		oldValue = oldItem->text();
+		if ( value != oldValue){
+			textColor = Qt::red;
 		}
 	}
-	QTableWidgetItem* value_item = new QTableWidgetItem(value, 0);
-	value_item->setForeground(text_color);
-	variablesTable->setItem(variable_id, column, value_item);
+	QTableWidgetItem* valueItem = new QTableWidgetItem(value, 0);
+	valueItem->setForeground(textColor);
+	variablesTable->setItem(variableId, column, valueItem);
 }
 
-void VariablesViewer::updateVariableValue8(int variable_id, QString value)
+void VariablesViewer::updateVariableValue8(int variableId, QString value)
 {
-	updateVariableValue(variable_id, value, 3);
+	updateVariableValue(variableId, value, 3);
 }
 
-void VariablesViewer::updateVariableValue16(int variable_id, QString value)
+void VariablesViewer::updateVariableValue16(int variableId, QString value)
 {
-	updateVariableValue(variable_id, value, 4);
+	updateVariableValue(variableId, value, 4);
 }
 
 void VariablesViewer::resizeEvent(QResizeEvent* e)

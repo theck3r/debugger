@@ -1,10 +1,3 @@
-/*
- * VariablesViewer.h
- *
- *  Created on: Feb 13, 2021
- *      Author: thies
- */
-
 #ifndef SRC_VARIABLESVIEWER_H_
 #define SRC_VARIABLESVIEWER_H_
 
@@ -25,9 +18,9 @@ public:
 
 	void initTable();
 	void updateTable();
-	void updateVariableValue(int variable_id, QString value, int column);
-	void updateVariableValue8(int variable_id, QString value);
-	void updateVariableValue16(int variable_id, QString value);
+	void updateVariableValue(int variableId, QString value, int column);
+	void updateVariableValue8(int variableId, QString value);
+	void updateVariableValue16(int variableId, QString value);
 
 public slots:
 	void symbolsChanged();
