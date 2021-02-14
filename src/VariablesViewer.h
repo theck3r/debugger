@@ -25,7 +25,8 @@ public:
 
 	void initTable();
 	void updateTable();
-	void updateVariableValue(int variable_id, QString value);
+	void updateVariableValue(int variable_id, QString value, int column);
+	void updateVariableValue8(int variable_id, QString value);
 	void updateVariableValue16(int variable_id, QString value);
 
 public slots:

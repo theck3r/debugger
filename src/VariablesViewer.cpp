@@ -12,15 +12,16 @@
 #include "OpenMSXConnection.h"
 #include <QTableWidget>
 #include <QTableWidgetItem>
+#include <QBrush>
 #include <QChar>
 #include <QStringList>
 #include <QString>
 #include <QVBoxLayout>
 
-class DebugAddressCall : public SimpleCommand
+class DebugAddress8Call : public SimpleCommand
 {
 public:
-	DebugAddressCall(VariablesViewer& viewer_, int address_, int variable_id_)
+	DebugAddress8Call(VariablesViewer& viewer_, int address_, int variable_id_)
 		: SimpleCommand(QString("peek %1").arg(address_))
 		, viewer(viewer_)
 		, address(address_)
@@ -30,7 +31,7 @@ public:
 
 	void replyOk(const QString& message) override
 	{
-		viewer.updateVariableValue(variable_id, message);
+		viewer.updateVariableValue8(variable_id, message);
 		delete this;
 	}
 private:
@@ -133,23 +134,39 @@ void VariablesViewer::updateTable()
 	for (int i = 0; i < variablesTable->rowCount(); i += 1) {
 		address_text = variablesTable->item(i, 2)->text();
 		address = address_text.right(4).toInt(&ok, 16);
-		CommClient::instance().sendCommand(new DebugAddressCall(*this,
+		CommClient::instance().sendCommand(new DebugAddress8Call(*this,
 				address, i));
 		CommClient::instance().sendCommand(new DebugAddress16Call(*this,
 				address, i));
 	}
 }
 
-void VariablesViewer::updateVariableValue(int variable_id, QString value)
+void VariablesViewer::updateVariableValue(int variable_id, QString value,
+		int column)
 {
+	QString old_value;
+	QTableWidgetItem* old_item;
+	QBrush text_color = Qt::black;
+	old_item = variablesTable->item(variable_id, column);
+	if (old_item != nullptr){
+		old_value = old_item->text();
+		if ( value != old_value){
+			text_color = Qt::red;
+		}
+	}
 	QTableWidgetItem* value_item = new QTableWidgetItem(value, 0);
-	variablesTable->setItem(variable_id, 3, value_item);
+	value_item->setForeground(text_color);
+	variablesTable->setItem(variable_id, column, value_item);
+}
+
+void VariablesViewer::updateVariableValue8(int variable_id, QString value)
+{
+	updateVariableValue(variable_id, value, 3);
 }
 
 void VariablesViewer::updateVariableValue16(int variable_id, QString value)
 {
-	QTableWidgetItem* value_item = new QTableWidgetItem(value, 0);
-	variablesTable->setItem(variable_id, 4, value_item);
+	updateVariableValue(variable_id, value, 4);
 }
 
 void VariablesViewer::resizeEvent(QResizeEvent* e)
