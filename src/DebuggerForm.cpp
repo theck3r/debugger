@@ -608,9 +608,6 @@ void DebuggerForm::createForm()
 	        this, SLOT(dockWidgetVisibilityChanged(DockableWidget*)));
 	connect(this, SIGNAL(symbolsChanged()),
 			variablesView, SLOT(symbolsChanged()));
-	connect(this, SIGNAL(symbolFileChanged()), variablesView,
-			SLOT(symbolFileChanged()));
-
 
 	// restore layout
 	restoreGeometry(Settings::get().value("Layout/WindowGeometry", saveGeometry()).toByteArray());
@@ -1033,6 +1030,9 @@ void DebuggerForm::openSession(const QString& file)
 		// active connection, merge loaded breakpoints
 		comm.sendCommand(new ListBreakPointsHandler(*this, true));
 	}
+	// in case file has symbols defined, update widgets
+	emit symbolsChanged();
+
 	// update recent
 	if (session.existsAsFile()) {
 		addRecentFile(file);
