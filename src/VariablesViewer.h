@@ -24,6 +24,7 @@ public:
 
 public slots:
 	void symbolsChanged();
+	void symbolFileChanged();
 
 private:
 	void resizeEvent(QResizeEvent* e) override;

@@ -608,6 +608,9 @@ void DebuggerForm::createForm()
 	        this, SLOT(dockWidgetVisibilityChanged(DockableWidget*)));
 	connect(this, SIGNAL(symbolsChanged()),
 			variablesView, SLOT(symbolsChanged()));
+	connect(this, SIGNAL(symbolFileChanged()), variablesView,
+			SLOT(symbolFileChanged()));
+
 
 	// restore layout
 	restoreGeometry(Settings::get().value("Layout/WindowGeometry", saveGeometry()).toByteArray());
@@ -1478,8 +1481,6 @@ void DebuggerForm::symbolFileChanged()
 	shown = false;
 	if (choice == QMessageBox::Yes)
 		session.symbolTable().reloadFiles();
-
-	variablesView->initTable();
 }
 
 void DebuggerForm::addressSlot(int addr, int& ps, int& ss, int& segment)

@@ -86,6 +86,8 @@ VariablesViewer::VariablesViewer(QWidget* parent)
 	vbox->setMargin(0);
 	vbox->addWidget(variablesTable);
 	setLayout(vbox);
+
+	//initTable();
 }
 
 void VariablesViewer::setSymbolTable(SymbolTable* st)
@@ -127,6 +129,15 @@ void VariablesViewer::initTable()
 }
 
 void VariablesViewer::symbolsChanged()
+{
+	// need to turn sorting off and on (otherwise the app will crash)
+	variablesTable->setSortingEnabled(false);
+	initTable();
+	variablesTable->setSortingEnabled(true);
+	updateTable();
+}
+
+void VariablesViewer::symbolFileChanged()
 {
 	// need to turn sorting off and on (otherwise the app will crash)
 	variablesTable->setSortingEnabled(false);
