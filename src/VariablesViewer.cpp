@@ -229,8 +229,8 @@ void VariablesViewer::updateVariablesValueFormat()
 			// old values were in decimal format
 			value8 = Item8->text().toInt(&ok, 10);
 			value16 = Item16->text().toInt(&ok, 10);
-			valueStr8 = QString("$%1").arg(value8, 2, 16);
-			valueStr16 = QString("$%1").arg(value16, 4, 16);
+			valueStr8 = QString("$%1").arg(value8, 2, 16, QLatin1Char('0'));
+			valueStr16 = QString("$%1").arg(value16, 4, 16, QLatin1Char('0'));
 		}
 		Item8->setText(valueStr8);
 		Item16->setText(valueStr16);
@@ -261,9 +261,9 @@ void VariablesViewer::updateVariableValue(int variableId, QString value,
 	}
 	if (valueFormat == "hex"){
 		if (newVal <= 255) {
-			value = QString("$%1").arg(newVal, 2, 16);
+			value = QString("$%1").arg(newVal, 2, 16, QLatin1Char('0'));
 		} else {
-			value = QString("$%1").arg(newVal, 4, 16);
+			value = QString("$%1").arg(newVal, 4, 16, QLatin1Char('0'));
 		}
 	} else {
 		value = QString("%1").arg(newVal);
