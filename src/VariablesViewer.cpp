@@ -15,7 +15,6 @@
 #include <QGroupBox>
 
 /*
-TODO: Add selection options for showing jump labels/variables and hex/dec values
 TODO: Check why symbols vanish in manager, when selecting type option "value"
 */
 
@@ -87,7 +86,7 @@ VariablesViewer::VariablesViewer(QWidget* parent)
 	auto* hbox = new QHBoxLayout();
 	hbox->setMargin(0);
 
-	showJumpLabels = false;
+	showJumpLabels = true;
 	valueFormat = "decimal";
 
 	showJumpLabelsCheckBox = new QCheckBox("Show jump labels");
@@ -96,6 +95,7 @@ VariablesViewer::VariablesViewer(QWidget* parent)
 	radioHex = new QRadioButton("hex");
 
 	radioDecimal->setChecked(true);
+	showJumpLabelsCheckBox->setChecked(true);
 
 	auto* hboxValueButtons = new QHBoxLayout();
 	hboxValueButtons->setMargin(0);
@@ -134,29 +134,37 @@ void VariablesViewer::setMemoryLayout(MemoryLayout* ml)
 void VariablesViewer::initTable()
 {
 	variablesTable->setRowCount(0);	// clear table first
+	int rowCount = 0;
 	if (symTable != nullptr){
 		QStringList variables;
 		Symbol* symbol;
 		QString symbolType;
 		variables = symTable->labelList(true, memLayout);
-		variablesTable->setRowCount(variables.size());
 		for (int i = 0; i < variables.size(); i += 1) {
 			symbol = symTable->getAddressSymbol(variables[i], true);
-			QTableWidgetItem* variable = new QTableWidgetItem(variables[i], 0);
-			variablesTable->setItem(i, 0, variable);
-			switch(symbol->type()){
-				case 0: symbolType = QString("Jump label");
-						break;
-				case 1: symbolType = QString("Variable label");
-						break;
-				default:
-						symbolType = QString("Unknown");
+			if ( (symbol->type() == 0 && showJumpLabels)
+					|| symbol->type() != 0) {
+				variablesTable->setRowCount(rowCount+1);
+				QTableWidgetItem* variable =
+						new QTableWidgetItem(variables[i], 0);
+				variablesTable->setItem(rowCount, 0, variable);
+				switch(symbol->type()){
+					case 0: symbolType = QString("Jump label");
+							break;
+					case 1: symbolType = QString("Variable label");
+							break;
+					default:
+							symbolType = QString("Unknown");
+				}
+				QTableWidgetItem* symbolTypeItem =
+						new QTableWidgetItem(symbolType, 0);
+				variablesTable->setItem(rowCount, 1, symbolTypeItem);
+				QTableWidgetItem* address = new QTableWidgetItem(
+						QString("$%1").arg(symbol->value(), 4, 16,
+								QLatin1Char('0')));
+				variablesTable->setItem(rowCount, 2, address);
+				rowCount++;
 			}
-			QTableWidgetItem* symbolTypeItem = new QTableWidgetItem(symbolType, 0);
-			variablesTable->setItem(i, 1, symbolTypeItem);
-			QTableWidgetItem* address = new QTableWidgetItem(
-					QString("$%1").arg(symbol->value(), 4, 16, QChar(48)));
-			variablesTable->setItem(i, 2, address);
 		}
 	}
 }
@@ -172,7 +180,16 @@ void VariablesViewer::valueFormatChanged(bool checked)
 }
 
 void VariablesViewer::showJumpLabelsChanged(int state){
-
+	if ( state == Qt::CheckState::Checked ){
+		showJumpLabels = true;
+	} else {
+		showJumpLabels = false;
+	}
+	// need to turn sorting off and on (otherwise the app will crash)
+	variablesTable->setSortingEnabled(false);
+	initTable();
+	variablesTable->setSortingEnabled(true);
+	updateTable();
 }
 
 void VariablesViewer::symbolsChanged()
